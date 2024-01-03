@@ -47,12 +47,12 @@ def numberOfDays():
         datediff = (date-today).days
         days = ""
         if datediff == 1:
-                days = "one"
+                days = "one day"
         if datediff == 3:
-                days = "three"
+                days = "three days"
         if datediff == 5:
-                days = 'five'
-    if (days or recipient or recipient_email or date):
+                days = 'five days'
+    if (days and recipient and recipient_email and date):
         return days, recipient, recipient_email, date
     else:
         return
@@ -75,7 +75,7 @@ def Notify():
     try:
         days, recipient, recipient_email, date = numberOfDays()
         if days:
-            message = f"Hi, {recipient}. \n This is a reminder that your loan is due in {days} days. \n The return date is {date}. \n Please make sure to return it on time. \n Thanks, IT"
+            message = f"Hi, {recipient}. \n This is a reminder that your loan is due in {days}. \n The return date is {date}. \n Please make sure to return it on time. \n Thanks, IT"
             subject = "Loan Reminder"
             msg = Message(subject, recipients=[recipient_email], body = message)
             mail.send(msg)
@@ -96,28 +96,11 @@ def Countdown():
         days, recipient, recipient_email, date = numberOfDays()
         if days:
             loan_return_message = f"<h1>Reminder for {recipient}</h1> \
-            <p>Your loan is due in {days} days. The return date is {date}.</p>"
+            <p>Your loan is due in {days}. The return date is {date}.</p>"
             messages.append(loan_return_message)
     except TypeError:
         pass
     return messages
-    
-def send_loan_reminder_notification(payload, teams_webhook_url):
-    try:
-        payload = {
-            "channel": "#Equipment Loan Notifications",
-            "text": payload
-        }
-        json_payload = json.dumps(payload)
-        response = requests.post(teams_webhook_url,
-                                 headers={'Content-Type': 'application/json'},
-                                 data=json_payload)
-        if response.status_code == 200:
-            print("Loan reminder notification sent successfully to Teams!")
-        else:
-            print(f"Failed to send loan reminder notification. Status code: {response.status_code}")
-    except Exception as e:
-        print(f"Error sending loan reminder notification: {str(e)}")
 
         
 
@@ -222,7 +205,9 @@ def home():
     messages = Countdown()
     for message in messages:
         print(message)
-        send_loan_reminder_notification(message,teams_webhook_url)
+        message2 = "Loan reminder notification sent successfully to Teams!"
+        reason = "reminder"
+        send_notification(message,teams_webhook_url,message2,reason)
     Notify()
     return render_template('home.html',loans=loans)
 
@@ -267,13 +252,6 @@ def request_loan():
             message = "Loan submission notification sent successfully to Teams!"
             reason = "submission"
             send_notification(loan_payload, teams_webhook_url, message, reason)
-            try:
-                days, recipient, recipient_email, date = numberOfDays()
-                if days:
-                    loan_payload2 = Countdown()
-                    send_loan_reminder_notification(loan_payload2, teams_webhook_url)
-            except TypeError:
-                pass
             Notify()
             save_loan_data(data)
 
